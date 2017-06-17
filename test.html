@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="initial-scale=1.0">
+		<meta charset="utf-8">
+		<title>Palert Web</title>
+		<link href="jquery/jquery-ui.css" rel="stylesheet">
+		<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_iMS_EgnFG5TDNAxA4vWUUWoTdnFmH5g" async defer></script>
+		<script type="text/javascript" src="jquery/external/jquery/jquery.js"></script>
+		<script type="text/javascript" src="jquery/jquery-ui.js"></script>
+		<style>
+			html, body {
+				height: 100%;
+				margin: 0;
+				padding: 0;
+			}
+			.controls {
+				margin-top: 10px;
+				border: 1px solid transparent;
+				border-radius: 2px 0 0 2px;
+				box-sizing: border-box;
+				outline: none;
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+				-webkit-appearance: none;
+			}
+			#map {
+				height: 100%;
+			}
+			#autobox {
+				background-color: #fff;
+				border-radius: 0 2px 2px 0;
+				font-size: 15px;
+				font-weight: 300;
+				padding: 0 11px 0 13px;
+				text-overflow: ellipsis;
+				height: 32px;
+				width: 200px;
+			}
+			#autobox:focus {
+				border-color: #4d90fe;
+			}
+			#switcher {
+				margin-left: 12px;
+				background-color: #4d90fe;
+				color: #fff;
+				font-weight: bold;
+				font-size: 15px;
+				height: 32px;
+			}
+			#menu {
+				margin-left: 12px;
+				padding:0 0 0 0;
+				background-color: #fff;
+				border-radius:2px 2px 2px 2px;
+				font-size: 15px;
+			}
+			.menubutton {
+				display: block;
+				color: #000;
+				background-color: #fff;
+				border: none;
+				border-bottom: 1px solid #ccc;
+				border-radius: 2px 2px 2px 2px;
+				font-weight: bold;
+				font-size: 15px;
+				text-align: left;
+				height: 32px;
+				width: 255px;
+			}
+			.menubutton:hover {
+				color: #4d90fe;
+			}
+			#menu div button:last-child {
+				border-bottom: none;
+			}
+			.contentbutton {
+				display:inline-block;
+				color: #fff;
+				background-color: #4d90fe;
+				border: none;
+				border-bottom: 1px solid #ccc;
+				border-radius: 2px 2px 2px 2px;
+				font-weight: bold;
+				font-size: 15px;
+				text-align: left;
+				height: 25px;
+				-webkit-appearance: none;
+			}
+			.listbutton {
+				display: block;
+				color: #000;
+				background-color: #fff;
+				border: none;
+				font-weight: bold;
+				font-size: 15px;
+				height: 32px;
+			}
+			.listbutton:hover {
+				color: #4d90fe;
+			}
+			.icon {
+				padding: 0 5px 0 2px;
+				height: 15px;
+			}
+			.indicator {
+				display: inline-block;
+				background-color: #00cc00;
+				width: 15px;
+				height: 15px;
+				border: 1px solid #000;
+				border-radius: 15px;
+			}
+			.indicator_not {
+				display: inline-block;
+				background-color: #ff0000;
+				width: 15px;
+				height: 15px;
+				border: 1px solid #000;
+				border-radius: 15px;
+			}
+			.modal {
+				display: none;
+				position: fixed;
+				z-index: 1;
+				left: 0;
+				top: 0;
+				width: 100%;
+				height: 100%;
+				overflow: auto;
+				background-color: rgba(0,0,0,0.4);
+			}
+			.modal-content {
+				background-color: #fefefe;
+				margin: 15% auto;
+				padding: 9px;
+				border: 1px solid transparent;
+				border-radius: 5px 5px 5px 5px;
+				width: 50%;
+				box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+			}
+			.close {
+				color: #aaa;
+				float: right;
+				font-size: 28px;
+				font-weight: bold;
+			}
+			.close:hover,
+			.close:focus {
+				color: #000;
+				text-decoration: none;
+				cursor: pointer;
+			}
+		</style>
+	</head>
+
+	<body onload="initialize()">
+		<div id="map"></div>
+		<button id="switcher" class="controls" onclick="openMenu()">Menu</button>
+		<input type="text" id="autobox" class="controls" placeholder="Search Box" />
+		<div id="menu" class="controls" style="display:none;">
+			<div id="M1" style="display:inline;">
+				<button class="menubutton" onclick="switchMenu(2)">Filter</button>
+				<button class="menubutton" onclick="switchMenu(3);genShakemap()">Shakemap</button>
+				<button class="menubutton" onclick="openDownloadModal();">Download list</button>
+				<button class="menubutton" onclick="getPosition()">Your position</button>
+				<button class="menubutton" onclick="">Engineering Mode</button>
+			</div>
+			<div id="M2" style="display:none;">
+				<button class="menubutton" onclick="switchFilter(1);showArea();">Area</button>
+					<table id="F1" style="display:none;">
+					<tr>
+						<td><button class="areacheck listbutton" id="Taipei"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAnFJREFUeNqsljFoE2EUx1+upbUUajo4ZCi0gtJGkFDsYKZzsugQh+LaFDJ009s6WU9cW9LFDgZM1ppColjqoJ6DVWhJC6Wx4NBAhxscTCWlirb4/sdLSNLL3SXnHx7fwb3v97373ve+dwGyUSgUCvIQZ4uxqXWvymwGW54tZ5pmuXluwAb2mIcH4YnJ4NjEbQrfmKQL/QPWux/fD+mg+JkKxgpGwDSGplsCGfYiNHwtfndap5HwTXISwKvPNCySZujMOWAVlniUrUXkpl/HPyn1ZIrM0l4N2iWwh4OXhuZmn772DIO6e3rpejRGuxuvIt3K2VGlUvkSkAQcJOazQbfPdPr8lD6FPR1RkE0GdQyDMBcMfrwHYCx6J0F+Na7exzANoHo5HPUNlC9UAWwrEa3ESbVGhf6zlGoF+BWfRas0ATSQdr8ShgFgHrXpVxtrKQwZANModD9RFj6uYNtKXH45Ra4g/U1mvmPg+5eLGPRaLaMG6fQk3td/MTh0Zbw9WHaRipvrBgemNR+bmXfZhbYyDt9Pa8/xqDUcGyvtpmnwdZTEHedV8MUcnrtzDijSOTkl/gRXGHzgW907W6AkSFtdtlZ2vFjhIy2goa90NTtzgvb7ensif//8Hr0auWULzKfm6PBbAU1Kty09G2k4qHYJQonxuSvXJ8IVyCtjb5Jyvhok53VJfMhrhFaCEEl9lIhO2mfS8bZpESUmpuujlHpdsmvwXiK0JqNOkVUYnrGIYyd0vON4n7grGsWtdVWOUa7V3nkCijJfN9+qJ8dHJP80jgq4OXCEw7g/q63Daf88i6HbbB88/U14ZJbEXPVPgAEASoUvGvq2SyYAAAAASUVORK5CYII=">台北 <span id="taipeicount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="NewTaipei"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAmNJREFUeNqslc9KG1EUxk/G2Ngu2lRRmtIWrRioKM5CF7ooAR/AgpRSFzU+QR037bJ5AYlP0GQlKMIE1I1Eh9JipYFEWhQialqEgCJECZZsxPOld8I0zr84fnC4k8y5vzn3nHvu9ZGJQqFQkIco2xhbxPCqxKaxpdjUYrFYqp/rM4F94uG93NMdHOh5TnK4m+4GAtV3p2fnlP9zRJu/djECpjA0YQlk2OenHe3R16MvKfzsCdkJ4OTqGj6SYOiU/n9TPWxmYpwetbWSk9oe3KeR/l7aOfgtX0pSZ7lcTtWADJtmh48f3r2pLc+Nmv1+GuoNU2Y3Lzc13zlj6HefKMDhzNvxoNMy7ZY/O7+EnHZJqCaDbgyDMBcMfnwF4NjooExeNdz3AsMkgBEv0RmjBAvAhgphV3VIoluWpHeAVx0dn1RbE0ANZfcqwdAATKE3vSqdyWFIAphAo3uJcvPnDtJW4J5WJXEExRbTX24MXP62hSFW62X0IDd49F5LINj1ONQwbHtvX+PAlPptM7X8dauhisN3/UcWj8p/2wbiL2gXlUocZ5xbwRdzeG7uGlAoxsUp8BIcYfCBr547U6AokJJcWaO/lYolDO/gI66AkiVQQFVehop8WmmBdwR84GvaeiZS0pmsaYHQYrzvSsZCOAL5y8hNXOyva9Gx5oQPuY2wWiBEYowS0YnrM2572lhEiYkJY5SiX+fMLng3EVYno09RVRie8RHH89AmSuRJy+X3dZhqlTtdfjcNsb13ELn4ty9TTs4+Jwe+tztxb4ufD+3y51oMzbJtuPH1u2QWhDnqSoABAGUfMohCbFUgAAAAAElFTkSuQmCC">新北 <span id="newtaipeicount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Keelung"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAnpJREFUeNqslk1rE1EUhk9mJs1HIxkoViJitNAgFSUb0WXBnQvr2oWmv0Czc2n+QfoLTDYupVkoCBUHUbAodtEWpQE7ETTSEp3IaPoV9bzTmzBJJzOTTF84nCFz75Nz77nn3AmRg1KplMouxzbHNmt7ZbBpbBW2xXq9bvTPDTnAHrK7l45l1HRsmtLRDI1JEeud2W5SffcLVX+vwgOWZ2hpIJBhjybCp3JX1euUipwlNwH86udTMg+aJYbOd36X+2E3Tt4mNTxBXjqhJCkTv0xfdzazcjx0zjTNShfIsPsJJfng5uSd7vL8SA4pNBWfoc+tj9nIeLjJ0LchkYBNjkz1Wqbb8p9tP8aenpeQTQaNDLNWyHPB4MdbAM5dTFyhoJoevwR3F8DZINHZowQLwKESMUgJOWl5iY5ZUqcCgqqxv2WVJoAa0h5U3w8ZGoAV1GZQrZnv4MoAllDoQaKs/llFTetc04uSaEGFZePFyMAPv17DFbq1jBrkAs9FpKg6OXZ6KNgKw2qtqsaB5fuPzTz+aZiMY+ya+R6P+SPti6PU44mY+mN/65ooI08tNZ5Q86BR5OjKPefQpgInR+cleMIwBmM7e+cIFAnKoxPv/d0dCMM7jBFXQM+9Ih/ZF9P8xEvPtv+1L5yJTjkC3xjPaXvvGy6pgmPpOSi/zgfVKUEoMS4Ew54ITyD/M/amKM5Xj5aNJbgFMYb8RmglCJHYo0R04vosunabAVFiYske5fphvS44XfB+IrQmo3EgqzDRREqe/dAlSuyTVtvZsBqA+PzQRwYKlXGIa60NEt80rlJ8ADUBsyI8lnuCPwZW2F76Gav4ZOrCPPVfgAEAxVowoeK9aXkAAAAASUVORK5CYII=">基隆 <span id="keelungcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+					</tr>
+					<tr>
+						<td><button class="areacheck listbutton" id="Taoyuan"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAlFJREFUeNqslT9IW1EUxu+LUah0iO1iCsXWQIUiqINLhRJBcFTo0NG4tqA+6WA3s0opEaqrT6c6KC91UoQ+KhbBwQguQqUBwXRRIgQdBPH7HichJu9ffP3gchLevb977vlzr6YcFI/HYzApjBGMZNWnIoaFkcUwC4VCsXat5gCbhZns7h2IdfcNKFj1qPWx/e3i/J86OT5U+783aQnTATVcgYAtPXueSI2+/6gSXT3KSwR/X5rjJgag43XAMuzDp68Vj/x0fVVSi1+m1dnpSQXaJLCpJ0/bZyY+fwsMo5qbW1Rf/6DK7Vu90SbtslQq7WmSgL/wLOZ3TK/jw1PG9GWE2QTowTCKa8nAz1ECR94OvVNh1f9mmGaMwGTiVU9ooJwwSWBDiXATkmrbiPrPipQ7IKxQi3ZrEmgx7WH15zhHYxGYZW+G1c72Os0ygQYbPYyXdAhhy6P9zIhcQWlzdeHBwK0fKzTpSi+zB9XtTQrlE+vofN0YbGNFHeV2LTim15bNOD82knHO/bW9xp/6vbKhsIOF6yjDOy6oOJdrsDZXBxSlkZw8juAL4xzOLcfOESgJ0mVnz4tVTqLXvit1rcfUY4HJeLopu7pIKB8p07H1HKQz2E4JYouh7orVifAFYmfGJiP1dU9Sr/MyRwX10E4QPan2kt7J85nxvG1cvORCo9pLqbl5pwc+iIf2YvYps8ohl4jhtSDq9ZFxwqtooeaSUkamW+wCAUXLRwcAXtvArN9kzW8CPHzBd1v+tnnFL7AAPcD4GWRuNCAzL8NXdwIMAPC9Mj04oJ38AAAAAElFTkSuQmCC">桃園 <span id="taoyuancount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Hsinchu"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAoRJREFUeNqsVU1oE0EUfvkxaqGy2kPZiJBCsApaghSUetl68iIpPQumeBa7HsSLYMCTpxQPerCYQHvxULJ6aEGwK1LbSlUwgrZUuiJNoGCJNCBRpL5vMwmbuNnddP3gMZvMm2/e77wA2UCWZYmXFEuSRbFslVl0Fo0lXyqVyq1nAzZkd3i5Hhs+LcUuDBCvFOk+aO7tFLeptLJOa9oyFVfWQaYyabYtIZM97uk/mhq6OUryYJycAGL99jQuyTLpWP3/UCvZpclrJPX1khu6o0eoP3mWvi18SoSqu7FKpaI1CJlsnBVujUzdaLjnBaH9+yh+8Qx9mXuXiFD4B5MuBUQCNtgyyc1NJ/efXb2PmPYFkc3oYHzPZKaHfBYc/DkCwuSpywr5xXGOJ+MKCJWoD+usVoILhB0lwinrQJD+M4L1DvCL76ubZmuCUEfa/aJY49BBqKE3/eLjFN4MyoEwi0b3Y+Xa0zcIm8E9nQ+KJyj9+t7MngnfPpjFkm70MnqQGzwVOdQl9Q7EOiN7OEfGfEFnw9TWshnDTZ1kHLqFWuzUf54vttLoihyQtlc3z4k2csXz8UdUNrYybF2uqQ4tSHOCDHbBlQw60K3HzpZQJEjFS/xr52dbMuxBR4yAprkSalVm1z+z64k/1d8njp0/aUv46u4T2ip8xZBK27aeDdTC9EvbBKHFuO7K1kS4EvLNiE1G1FcTFmv1OiF0yKuFZoJgidVKWCfGZ8bxtWljJQ5mrVaKmpuwG/BeLDQPo0+RVQi+cYnTgbDjNOM48VTUueaUaq2M8u1i54lQIGe8+KCIutTclAOuw0eW8VpsiJ+HneLnfaLJ8nuWeS+6YY+chhBX/BVgAJ0ILmHdHM3NAAAAAElFTkSuQmCC">新竹 <span id="hsinchucount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Miaoli"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAkpJREFUeNqslTtMG0EQhofz2YCQkJUiyIKCSJQgQZFHhSxSI2hTBYpUKfB1dImbVBTnOpFiKrdnOgrQJWl4SCQSFBRIuIksUSAjmbeBzH/MWYdZ3y2+/NJqLe/Ot3Pz2DVJoUwmk+ZpjscMj2xgqcbD5VHm4VSr1VqrbZcC9pmnhcbYm/T16Gvime56+7w14/iIEge7lNpexwyYxdBiWyDDvt8Mvpi7nP1AjZFRCpN5sEc9JRuHFBk67/+faIWdffxCtwNDFKXbZ8/p+tVbMvd3xvvvGsP1er3cBDIsxxsWz3JLzc/TUjJFjYlJSv7+Nd5vGicM3TAkAZ8u3uWeBhPBBrZggGUgmzcjY+momIUJtmDwz1kAZy4npymurl5OYXoPYJbpsYHCyBp+HOIKWfdqlf6zDL8D4irx99BrTQBdtFNs4D3DBbCM3oyr1M8VTMsAFtHo6M1OldxaQ9gq3NOOIVdQvtv52jGwe7WEKd9MCkNtDmol9WOlIxh75/rXWLBs5mVRv0R4rzhhPSgb8dLtOj+1e0sFbSD2woZt/zwCivKcoIq5uxEJwx7s9WOnBEqCLDm5LQxr8iVW67vyqPWQejZwJHNK9TjfAMUj5ShbTyELwVYlCC3GdVcLJiISyCcjNrbKS3jHKsge0vXQSxA8CXoJ7+T5tENvmzZewrAY9FL6taB64HU89IzRp8gqBn7jkMj7MMRLxMlFzQnMaRe7Zn1qNMRycm8zK3VZjix4DaAb6BxH6wnQ+Gz0qhuWjKd4CFVkROqfAAMAVXgYGB3PWjQAAAAASUVORK5CYII=">苗栗 <span id="miaolicount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+					</tr>
+					<tr>
+						<td><button class="areacheck listbutton" id="Taichung"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAppJREFUeNqsls9rE1EQxyeb2B/EwPZgJVYkRNDCUo20lhQFt5CbYPwPTC56EXQv4kVoQEQ82PSQg3pIIiiYSxMlpwYStNhSW1TKghaMi6ih9dAICYpWcGZ5CZu4v9L1C8Ns++Z9dt6bN/viAh35/X4eXQwtiiZqhupoFbQCWr5Wq9W757p0YDPorkwKU/ykEIaTwhR4B73q2LftTZA/rEN5rUSeYBJCM4ZAhKUDB4Kx+LmLIATHwExydR1ST2Zha3szg9B46//ublji0m0YGT4IVhoe2g/iRATebKyF/sBOoNFoFNpAhF3FgOu3Lt9tL8+O+vb0wanjZ+Dl2+chzuP6jtBlNyvA/LXYjQE7melBAyNBqKyWwj6f7x5H1RQOj/FWe2YmmksMfDxPwOjZ01FwqunxCLkLBBSF4DHHQMyQnEjAngphpH1YdRIH/1lcqwOcSvlaVVuTgBVqJ6eiziEWAQvUm05VfKE2SpaAGWp09oZdCQ819bSCPZ3n2CcokX56f9fA3MJjcol2L1MPYoPHvIN7+SOHRnuGrchLFUxM6j428dzCo54qTrHFxTw9Sv98vjBLpX+gn1dq1fD0RMQW8M7Dm/Bl63MSs8t2nEONElggBZdgCaMYim3tnS6QFUhK5Wah+aNpCKMximFXQMe94u4OxqW/w6WHfu/8Gj1xdFwX+GA+BRuf3tMlldBtPR1JxcWCboGoxcqrpbq2EJZAfDPtTZKdrw6ln6nndY7FgN0M1QJRJtosKTt2fSZNvzYGWdLEjDZL2gaWXb1nINMcZqlWlYye6SVmEzxmg7RPeCtWXslLYvOneozyRntnC8iUXZGXEdgA9pvGVC6rAMwwgO4j+3PIbP9sC6Gv0cp2Yj02mQozS/0VYADj0ysCLaHofQAAAABJRU5ErkJggg==">台中 <span id="taichungcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Changhua"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAoFJREFUeNqsVkFvElEQfiwIQt26NcZISBSamOCpXDQeNCHh5qVt4tWU/gF1b+rJPemRHnp20Yu3wkVPxDX1YOrB1IuYGNk0IVRDKJRVQ5ta59s+yEKX3aXrl0xmYed9zHvzvhkCzAbxeFwilyebJ8taXrXJNLIyWanRaLRH1wZsyJ6Quy/O5qQzszkmpnJMiIjmu/1unf2uf2SdLyXyGyCTiVQdS0hkz0+fT+cv3HrEYolrzAkgblQes/3dukqky/3vg6NklxaLLDyTYm44NZ1gUnqR/dp6n4kGe0nDMMoDQiJ7QAEPk3deDbbnBYFQhE1fuc12v73JxMKHHSL9EOAFqFFmkts2nba/tbaEM00JqGYscf3EZADWgoMeF0A4f27uLvOLs1cX4JZAmCV234R8h1kQTlSIsVUXE6YX2H+G0FeAX/SaVVOaINRQdr8gKcJpICxDm37R2nwJVwShCqH7ybJTLUHTOmm6JPAWpPxcf3piwubGKpwy0DI0SALPByOiFL04NzGZ8b2iUWLy6LVZxstJKo7Ync0XeJSPtS/KUp+KhqVe8+sNLiNX1F/fY3s7tQJlVxy6hxYoVCCdtuBKhhjE9s/OlpAXSEYn/tvrjiXDO8TwETA0V4LHftkwqrT1zOHBXnrq8k1bwu13Cvuz/RlDSrGVng3kFh22XYEgMRJC21oIV0L6ZZxNgd+vIfxYfwa3wmOY1wzNAiETa5bIjo/PgmO3GZMlFqrWLFtHd27FbsB7ydBcjMaBqsJ4E1Fd+6FDljgnrVurUANYY/zvh+60JuRBEEW6xNmDo3tZdp3VbgE0t5OY2/zjjNP5eQaRfiJ76yU25JFT5+aKfwIMAFBfMDHiG1fRAAAAAElFTkSuQmCC">彰化 <span id="changhuacount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Nantou"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAotJREFUeNqsVjFoE1EY/pPGVofCZREugqQOWizSQBWkFDwqFARr4+ggJosdBDUo1KGDh0s7COkixCWJigWXJsZBrNYTFAUNolIpHewhmAwOjSZQDIL+3/ESrvFyd8n5wc9/yb333ff+/333zkcWkGVZ4hTjmOJQTLcqHBpHniNXLpcrrXN9FmTXOV1Sxock5fgQHRs/SP39u4x75dImFd9+oULuHTLIEkyaaUvIZOn9g6HYlZlJGjmyj+wAYnX2AZW+bWaYNN74v6eVLJU+T+GB3eSE0J4gnYyO0OtX65H6LwrXarV8k5DJLvOAa+n7F5rLc4O+vh00cWKYlh9/iNCfwA8mfeMTDdhIpaclp2XaLX86nkJNB/zoJhN1TQZgLjj4MgrCqTNnx8grJqOHkc6BUPGizqwSXCDsqBHtIIeCRvbTf4a/4QCvWF8rGdYEoYa2e4Xg0ECYhze9YvHeS6QsCDMwuheVj/JFeFpnT+f84hWk3pwvdE14+9Yyktr0MjzIBo/x9pEODe/tkOwpaSurGgtLtG6bOG520nGMXbxr1C7xz+uLVeq9vTslbv9RYSNHXL14h/SN70lWl922D01QuTk6L8GRDGMwtlE7uyMgyrVcevhkpq0lq9UtOjUxj3wanTXf62kdzEtf46VH6vXfg6NjBywJ524s0aePX3FIqZbWs0ACxbZqECxWyBUr5kY4EvKTUZuk2F/bIPbrghhDbhUaDYISs0qoE8dn0vZt00YlJmbMKoVfF6wOeDcKjcms0ugqAtd4iN2EgK0TuE68jbQXK5+V6s8tEp8feteEAlnt2aoCheKbxhY+x7NClsM4t8XPoF393B9Asvye47mbsQGXnLoIR/wVYACDHyhI/UfekgAAAABJRU5ErkJggg==">南投 <span id="nantoucount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+					</tr>
+					<tr>
+						<td><button class="areacheck listbutton" id="Yunlin"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAopJREFUeNpiZMACJCUlBYBUAhD7A7EDktQHID4AxBuBeMPz588/oOtlxGJYA5DKV7N2EFCzdmRQtXZg4ODhBct9fPGM4dHFswyXdm4G0mdAhhUCDV2A00CgYfPFldUTXLJLGOT0jRnwAZDBW7rqQZYsABqaCBNnRjcsqm8Wg7CcAgMhwC8hxaDr7stw//RxA8bfPxW+fPmyEW4g0LACoIKKuCkL4d4jBrCwsTNoOrozXD+wy4CVkeEj0NATjNAIuB/dN1uAkDfxeX9pUSooTBWZQLEpp29CtmEgANILMgPIDAAZ6G8aHMVAKdADhicQxIMMdKDEdciuBJkFMpCkiMAX6yDAxEBlwATLAZSCl3dvgrMmyMADoGinFDy6ADbjAMjAjaC8SSk4vW4ZiFoIMnABKKNT4srLQAcBg+0BME9vYIIWQY17pvaQbeDhRTNBVCM8L4Pz4O+fCcDkIyCtpUuSYUeAht06euAA0GGF6MkmESRJSoyD1J5eCw67QoziC+jKB5zsbAIv796ygGYjgmBtXTHD28cPJgBdtxAlHSKBRmAEPQB6gaBhIDUgtbCww2ogNIIKtwJL4h9fPuM0DCQHUgOtAlDqFWZ0xUCv3wB63eDv718aSqZWWA3cMaGN4dn1y6BKqhFr1sMCCkGBjS2CQFkMmO4+IEcEQQOBNoPCZgI0faGAPVN7QdREqBoGYl0IjiCQS5BdCXIdtPqcgLe0weFKkMYFyK6EprmJ2Cp4YlwI1gzKp6BYBeHLkEJkAd6aEJ8kKJyAteKB20cPOECT0QZcYUeUgVCw8NbR/UADvzBA2zR4ASMhBUAXgpoR96FcQXzhRzQAGnoeiPcT1Zog0swHUEwQAAQYAI+YK/VmhFbyAAAAAElFTkSuQmCC">雲林 <span id="yunlincount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Chiayi"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAnRJREFUeNqslj9v00AYxt/YdUnSP1iNIER0SJFAwEAzIAhb+ARlYCf9BMQDEiP5BunKgiMWBoZkoCP1WAZAFPFHaiUs0cikpcgtKQFFtLyPuUROasdO3Uc6XRTf/fzeve9z5xh5KJPJqNwVuS1wK7ge2dwMbnVuNcuy7MG5MQ/YI+7up+en1PS1aTo7P0VKQnaetXc69GN9nzZXbfSAaQzVfYEMezI9Gy9euXuOZi5O0DABvPa0gZfoDF3s/i8Pwm6UsjSZPkVBSqTG6Xxepe8fW7nxw0S21WrVe0CGlRIp5eGtBxd6ywsjWZEoc/00Wa93c3E5ucvQ1ZhIwJebpawatMxhy39VMbGncxKyyaBjwyDMBYN/3gFwIXs7RVE1mweP7gFYmLmUjAwUKywAOFIi/LOuOL1EJyyp64Co2tv87VgTQANpjyrBMACsw5tRZa7soKsCqMPoUaJscEC8bSZ7uiaJI6j86fm3YwPXl7fQlXtehgfZ4EUlKavq3Gg1ubG8Tc13Pw0OTBssm8WNF9sjZRxjzZfO3mlHji+O0kzGJ1ROf17YKFBvHn+l/eafCkdX7atDl8qcHJOXEAjDGIzt7p0nUCRIe88ncaf91xeGZxgjroC+mjtiYl76Z1567qBzePnM1UlP4IdnFtlmG5dU2dN6HtJQqF4JgsW47mx3IgKB/GbsTUXUV59EvS6JMRQ2QidBiMQdJaIT12dl6GnjEyUm6u4ohV+XvC74MBE6k+FTZBWt8f8Q0QPPwyFRYp+MLa45Aav57V1XYyEMUW2u7RU6vw5IfNNQVKDhck7tRO4J/hh4y20lzNixsAeyaIH6J8AAyJMyVFPWg7kAAAAASUVORK5CYII=">嘉義 <span id="chiayicount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Tainan"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAApVJREFUeNpiZMACJCUlBYBUAhD7A7EDktQHID4AxBuBeMPz588/oOtlxGJYA5DKd3HkFHBx4mIA0gx8vExguafP/jCcPPOTYf3Gr0D6B8iwQqChC3AaCDRsvqY6W0J1mSCDmQk7Az5wCmhwee1bkCULgIYmYhgIM2zxXDG4iwiBT5//McQmv2K4fvMX3FBmqGEF0lIsFauWiBNtGAiwszMyeHtwMWzd8c3gPwP3xy9fvpxghEbA/SVzxQUIeROf92OSX4LCVBHknARzEw6yDQMBkF6QGUBmAMhA//gYXgZKQaA/N4iKBxnoQInrYMAcYoYDOAZIiQhcABipYJpyk9AAEywHUAqAaRGcNUEGHgBlJ0rBKYgZB0AGbgTlTUrBgiWfQdRCkIELQBn9FAWuXLfpKyjYHgCz3wYmaBHU2Nr1nmwDJ0//CKIa4XkZlAd//ORK4ONjEjDQIy1NTp7xkWHP/u8HgA4rRE82iSCbSIlxkNqFkLArhIkxwxhAVz5gY+MRuHHzt0UQJBsRBNkFbxjuPfg9Aei6hSjpEAk0AiPoAdALBA0DqQGphYUdviogAJgV1+/bLoUzS4IKVifPZyA6EBSzyHLM6IqBXr8B9LrBz5//NeysObEaWN/yjuHC5V+gSqoRa9bDAgoXLv2MNYJAWQyY7j4gRwReF0Jd+YGXl1fg8+d/FqCaDxkUlYMrpk50rxJyITiCQC5BdiXIddDqcwLe0gYbgOagBdBcAAbQNDcRWwWPM5bRYlwBVIGdOSID5pvYPAFRikADH+DSw4LPQJBGoKEHgGnOARieDNDmxwN8eliIyBAL9+z7BjTwPwO0TYMXMBJSAPM2lCuIL/yIBkBDzwPxfmLUshBp5gMoJggAAgwA/2EtVFlwRl4AAAAASUVORK5CYII=">台南 <span id="tainancount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+					</tr>
+					<tr>
+						<td><button class="areacheck listbutton" id="Kaohsiung"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAo1JREFUeNqslU1oE1EQxycf1VQaWKvQBIoGtLQqJAGRBnuJF3us9OJNU8GLBzV48aY5i5AiFMSDiXjRQ8weVNpL10PFICIpSFtqcIuWNCBlhQU/Kuj8l5ewSTe7G9c/DC/Jm/fLvJk37/nIQtFoVOIhwzbFljZNaWwKm8xWrtfrWudanwXsNg/XJkbj0sRYnE6Pxmkg1G/MNbRtqm6s03y1QlV1HbAsQwtdgQx7eCQynLkyOU2JwyNkJ4DvyI9pS9suMHSm+XugE3b3wlU6dHCInBSRDtDZRIre1laSO74/MV3X5RaQYdcj0uDNe5dutLbnRnuCfXTmxElSPrxL+vqC3xj6JiAK8Cx3/nLITWRWUN4ZLVQrqXA4fN+PaiZiI5JTzuyEtWDwx3MATk2Pp8mrJhPjGC4CmPYSnTlKsADsqRDdNCQNGqOf/rP8zQ7wqtrWF6M1AVRw6r2quvERgwKgjN70qlJlEUMRwAIa3UuUfKjR0yr3dNkvrqDc3Hzpn4GPXr3AkGv1MnqQGzwzENonHRuO9Qh7SUtrywoHlu08NjP4p14qDl+Ru+yu64ujVPf2h6RaYzMl2shRt54+oM9fG3mOrth2Dk3KcYFU3oIjDD7wbebOEigKlMVNrP/43hWGOfiIJ6DtXQnsctb1Vd568tfvnbFTR49bAmefP6GVTRWPVM6y9SyULVUUywKhxbgRNHMhHIH8z8hNXpyvNs0tGOd1VviQ2wiNAiESc5SITjyfedvbpkuUWFgwR4k0iOi0noHN/OPiQFVh4hIp2C0I2k0iT/wqKq/XltPiGJW75c4VUKi4tMrAnwZQdnL2OTlwhLgtPomv++3y51oMfc+26MY36JKpCnPUXwEGACw9LCAu/dbyAAAAAElFTkSuQmCC">高雄 <span id="kaohsiungcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Pingtung"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAkFJREFUeNqslTFP20AUx59NULtQuROKhJQyIdEBtjBmoV0qgcTUDkD4AtRDEAsSEXyA5BMkMLRTJAexAANWJ9KlZUFiwpGQIra0zcAU8/7nM3XJxb7G/KWnc+J7v3t+796dQQpls1mLh3W2JbZC5FWXzWVrsjmdTqf71NdQwHZ52FycMax3M0Q80quXwbtbdm+1fWpcEl20fcBshtaHAhlWm52k9Z33JuVzFKtWm6h01McidYYWB4Ah7Muq+RhRkn7fE3067NPV3V/omIR9nrJou7GhD4NeZIg+vDXo+Mqf98cnfvV6vQtDFuDm66ppJX1m3Od/POwjp9MmqrmQM0aGQfAFgx+XAVwq5im1VubEsAZgIZ8zUgMlowDgfxVimKasYDTpmWWGHZBWvBdFawLoop3SquUJhgtgE72ZVrXvAngAYB2Njs05qhqXPtLmcfs5pjyCynsn/ZGB1W8iuvJjURha4aR6tZY/Eoyjc8NjLLptivKltjBXBmH/s21klC4fR5WtI/0oMRc+7PtzAChV5gJ5Z9fJUMzB3DB3SqAskF0KVo49WEvBl9hP75WB1kPp2cGRlVNq71QsiEvKUbaeQjaSrSoQWoz3XTdaiEQgr4zcVFRR7p+I/6pyDulGKAqESKJRIjp5fVZiT5shUcKxHo1S7rmq6oLXiVA4o09RVRiesUjieRgTJfLkYs9JmDMsd6EyGg1xcHpNhT/BvmwmTU68nfjefoN7W/58HZc/bTH0B9u5ztyMJtOTlqgHAQYA/V8eTEbg/5MAAAAASUVORK5CYII=">屏東 <span id="pingtungcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Ilan"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAmJJREFUeNqsls9OGlEUxg8zBASUDgYTqYn136I1XbBqunRp0oV9g+IT6Oy6LG+ATyC+Aexc2VmY1LipK9qkVkeDQhRlwKlRE9qej1zIgMPM4PglJ2fCnPubc++5514CZKNUKqWwy7CtsC1ZXhlsGluRrVCpVIz+sQEb2Bd2a9OJuMJG0+NxCsly+515/0DV5h86rNXhAVMZmh8IZNjmeHQk8+7VS5qMx8hJAO8elfGRPENXO7/L/bDlxTl6EQmTm0bDIVqYSNCZcZMOjkRmTNMsdoEMW+eAzx/eznen50WyJNFsUqHjq0Y6HIk2GLoXEAU4Xn4zp7hN02n62z+OsKazEqrJoCfDIIwFgx8/AriyOJkkv1pIJuA+AbjkJztrlmABOFQhnKoOSfTMkjod4FfXt3ft1gRQQ9n9qto04TQAi+hNvypVr+C2AMyj0f1keXhZx7Lp3NMFSRxB2f2T8ycDD84u4LLdXkYPcoNnQkFZmRiNDg07rTc1Tkzt3zarB+WLoSqO2FKlhkf10fHFWerRWEzh8r/HseRFO79OqHF3n+Pstnr2oUVZLo7OU3CFIQaxnbWzBYoCqbu/y/TQag2E4R1ixBXQc688amKe+k+eerr199/rKWXMFvhNP6dL8xaXVNa29Wyklqo12wKhxXjfGdZCuAL5y1ibnNhfPRL7dUPEkNcM2wVCJtYskZ24PnOOp82ALDEwb80SyyCyM4YGCm2gT1FVGJ7xEdfz0CFLrJN2et3swAqD1s5rhu0jCZtYbPaiW3DQA1CzdE7hWe4J/jPwne2rl9igR6YuzFX/BRgALG0y0hw/ZioAAAAASUVORK5CYII=">宜蘭 <span id="ilancount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+					</tr>
+					<tr>
+						<td><button class="areacheck listbutton" id="Hualien"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAohJREFUeNqslc9rE1EQx2fTVNuDuEJBY5EmiDZFNOmh0oOHUEHQS/MPFBMPHtWcFPRg8NRbevFoEyp6EDRLwIpgugii2ENsBZsoki1Yo6Cw1RyqFHS+25ewifsriV8Y3iZv3mfnvZnZJ5GFAoGAzEOCbZotZprS2VQ2hS1fq9X09rWSBewmD5enxkbl0+FRmho7SnsGBoy5z/omLVfXKf9mBSNgKYZmbYEMmw8f2J+4eu4MTQRHyEnL2jrdeFigDV3PMjTZ+L+vHTZ/YYZCQ0PkpmFZpvj4CXrx4WP0lyQF6/W60gQy7Ao7XLt3Mdncnhft9vvp7PFj9OTtu+if/v5Nhr6SRAKqHJnstk2n7SfvLOBMQz5kcyI00jUMwlow+DEO4PTM5EnqVfFoBMN5AGNM7xkoGDEAO0qEnQ7Ke43RR/9ZvkYH9Kryl69GawKoop16lWCoACrozV519+VrDDkAs2h0FGe3Ukqr6GmNezrvE5+g9Ozjp10Dby89x5Bu9jJ6kBs8weUjRw4NdwwrlisqB5ZqL5skJjvJOHwXds4u9c/ni6PUdg0Oypz+yfh4xBPw0v0HVP32PcPR5Vrq0KQ0J0grrlVcYfCBb+PsLIEiQanrjwr0c2vLFoY5+IgroOVe6Wt35q2XeevR39vb4VNHDlsCbxUWafXTBi6ptGXrWSiFw7ZKEFosX1rRzYlwBfKbcTYZUV8tml006nVO+JDXCI0EIRJzlIhOXJ8Zx6+NTZRYmDVHKfp1zuqC9xKhsZijNLIKwzNe4rTA7zSJc+JbUS2uvY/92CmjvN3ZeQIK5Z6VKzFRl4qbs+TmwBEGcW+Ln/uczs+zGFpiW/Li6/fI1IS56q8AAwCtsiz95uIH8wAAAABJRU5ErkJggg==">花蓮 <span id="hualiencount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="Taitung"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAm9JREFUeNqsVj1P21AUfbZDDHEkLBG1isTQdmkXpEgsTFUkOkP/QYPUvfWGOjVDmTqYhQmJsNA1ZkdYnZjaIQztUjJUilQh4YBDiDHQe8xL5Bg7dmKOdHWt+Pq88979eBFYCIrFokquQrZKVva9sshMMoOs3mq1rOC3QgjZZ3IflqanVTIGU0TRe/fv5oY1ej120O3Cg0wj0lokIZHtvJiaqryfnWUL2SwbhYbjMP3sDIvUiHSt/7sUJNuYm2PzmQyLw1NJYm9yOfaj1yu5udwz27aNASGRfXwiSetfC4XB9pIgKwjs9cwM+97tlkRFaRPpkcATcLJRKKhx2xy1/U+npzjT55BTWZDlickAfAsOenwLwtUVRWFpsUxbJ7wDYTmNuoFKWYYrexkYJxFRoKR6Pj1TAGK/A9Liz/W115ogNNFOaXFMpQMuEBrozbQwbBtuF4Q1NHrjfoWJcHB5iWNrUk/XRT6Cqtvt9sSEexcXcNVBL6MHqcEreVFUX45Zk9+I7OjqyiRhWrBs1rDSOBlHrNHp4FF7ML5IZVPO59UT111aprGUBF9oHv51XZ3U7Q7VoQ9VSlCTthBLhhjE9s8ulJAnSNMti3VubyPJ8A4x/AoYulekYDBt/RdtveTc3b1apPskDFtUEb8dB5dUNbT1QqDt02GHJQgtRnVn+RMRS0gr42x0Xl9D2D4/h9vkMSypQi9BUOJXCXX8+tRHTpsIlfiw5le5f19zm2EXfBKF3sfoU2QVhmcsEjsPR6jEOZmoOT6R6lFnl1ShN5JAyIvdiAvOJCA0fZ1Tf5R7gv4M/CQ7TBKbScjZ5BaL/wIMAHjDM0ndjsPaAAAAAElFTkSuQmCC">台東 <span id="taitungcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="areacheck listbutton" id="allarea"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAdxJREFUeNqsVj2LwkAQXeVqyZUWgp3tVQGtLNIrBNKegr3+AvEHKHKtETxLbTwr7S6VltdobdDC8tQ/EOeFjeS8uJsPHwwTNrMvM7Mzs0mxAGSzWYVUjaRCUva9OpFYJHOSr+PxeGIyEFmH5LderzuTycQ5n8+Oh/1+767puu7AhqQmIxtpmuasVitHBtioqgrikZDM75EMsMWef6S00MLXopD5SbmnrdsBIB9hwhSFz3OqpHGapVJJKRaLLC6wFxz0WAVhpdFosKQwDAPqHSHHyt09UFLggocsk8kk9jCXy7k6zZ4Ml/BwOCQm2m63bmuC0Fqv14kJqXSgLBDOp9NpYsLhcAg1fkphY2AQx+5P66En44K3Xu2+n3eDwSAyWbfbBdl30LQpFwoFt0CjFDP20N63RyOsj+EZFnzQ9kUDFge0WywWUjLYwJZfF8KpXUUYov7GOx5qNVRNkeGs3W4/JGw2myCbhS5SMs5jcgQd0Gaz8YZpPlLlI9nw5MFBdCK3ktdBfi993inCaRMEfol/9nq925ppmlAfoS54US5xqhA8y3L3InpJnthEYC2XyzIRMv77Yccm5BiD8HK5MP5PI0QqTNikvNH0Gjt/d6Q/gRMlZsiAzUWKqwADAPDxXis8ZelUAAAAAElFTkSuQmCC">全選</button></td>
+					</tr>
+					</table>
+				<button class="menubutton" onclick="switchFilter(2);showFloor();">Floor</button>
+					<table id="F2" style="display:none;">
+					<tr>
+						<td><button class="floorselect listbutton" value='-1'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAm9JREFUeNqsVj1P21AUfbZDDHEkLBG1isTQdmkXpEgsTFUkOkP/QYPUvfWGOjVDmTqYhQmJsNA1ZkdYnZjaIQztUjJUilQh4YBDiDHQe8xL5Bg7dmKOdHWt+Pq88979eBFYCIrFokquQrZKVva9sshMMoOs3mq1rOC3QgjZZ3IflqanVTIGU0TRe/fv5oY1ej120O3Cg0wj0lokIZHtvJiaqryfnWUL2SwbhYbjMP3sDIvUiHSt/7sUJNuYm2PzmQyLw1NJYm9yOfaj1yu5udwz27aNASGRfXwiSetfC4XB9pIgKwjs9cwM+97tlkRFaRPpkcATcLJRKKhx2xy1/U+npzjT55BTWZDlickAfAsOenwLwtUVRWFpsUxbJ7wDYTmNuoFKWYYrexkYJxFRoKR6Pj1TAGK/A9Liz/W115ogNNFOaXFMpQMuEBrozbQwbBtuF4Q1NHrjfoWJcHB5iWNrUk/XRT6Cqtvt9sSEexcXcNVBL6MHqcEreVFUX45Zk9+I7OjqyiRhWrBs1rDSOBlHrNHp4FF7ML5IZVPO59UT111aprGUBF9oHv51XZ3U7Q7VoQ9VSlCTthBLhhjE9s8ulJAnSNMti3VubyPJ8A4x/AoYulekYDBt/RdtveTc3b1apPskDFtUEb8dB5dUNbT1QqDt02GHJQgtRnVn+RMRS0gr42x0Xl9D2D4/h9vkMSypQi9BUOJXCXX8+tRHTpsIlfiw5le5f19zm2EXfBKF3sfoU2QVhmcsEjsPR6jEOZmoOT6R6lFnl1ShN5JAyIvdiAvOJCA0fZ1Tf5R7gv4M/CQ7TBKbScjZ5BaL/wIMAHjDM0ndjsPaAAAAAElFTkSuQmCC">B1 <span id="b1count" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="floorselect listbutton" value='1'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAkFJREFUeNqslTFP20AUx59NULtQuROKhJQyIdEBtjBmoV0qgcTUDkD4AtRDEAsSEXyA5BMkMLRTJAexAANWJ9KlZUFiwpGQIra0zcAU8/7nM3XJxb7G/KWnc+J7v3t+796dQQpls1mLh3W2JbZC5FWXzWVrsjmdTqf71NdQwHZ52FycMax3M0Q80quXwbtbdm+1fWpcEl20fcBshtaHAhlWm52k9Z33JuVzFKtWm6h01McidYYWB4Ah7Muq+RhRkn7fE3067NPV3V/omIR9nrJou7GhD4NeZIg+vDXo+Mqf98cnfvV6vQtDFuDm66ppJX1m3Od/POwjp9MmqrmQM0aGQfAFgx+XAVwq5im1VubEsAZgIZ8zUgMlowDgfxVimKasYDTpmWWGHZBWvBdFawLoop3SquUJhgtgE72ZVrXvAngAYB2Njs05qhqXPtLmcfs5pjyCynsn/ZGB1W8iuvJjURha4aR6tZY/Eoyjc8NjLLptivKltjBXBmH/s21klC4fR5WtI/0oMRc+7PtzAChV5gJ5Z9fJUMzB3DB3SqAskF0KVo49WEvBl9hP75WB1kPp2cGRlVNq71QsiEvKUbaeQjaSrSoQWoz3XTdaiEQgr4zcVFRR7p+I/6pyDulGKAqESKJRIjp5fVZiT5shUcKxHo1S7rmq6oLXiVA4o09RVRiesUjieRgTJfLkYs9JmDMsd6EyGg1xcHpNhT/BvmwmTU68nfjefoN7W/58HZc/bTH0B9u5ztyMJtOTlqgHAQYA/V8eTEbg/5MAAAAASUVORK5CYII=">1F <span id="1fcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="floorselect listbutton" value='2'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAApVJREFUeNpiZMACJCUlBYBUAhD7A7EDktQHID4AxBuBeMPz588/oOtlxGJYA5DKd3HkFHBx4mIA0gx8vExguafP/jCcPPOTYf3Gr0D6B8iwQqChC3AaCDRsvqY6W0J1mSCDmQk7Az5wCmhwee1bkCULgIYmYhgIM2zxXDG4iwiBT5//McQmv2K4fvMX3FBmqGEF0lIsFauWiBNtGAiwszMyeHtwMWzd8c3gPwP3xy9fvpxghEbA/SVzxQUIeROf92OSX4LCVBHknARzEw6yDQMBkF6QGUBmAMhA//gYXgZKQaA/N4iKBxnoQInrYMAcYoYDOAZIiQhcABipYJpyk9AAEywHUAqAaRGcNUEGHgBlJ0rBKYgZB0AGbgTlTUrBgiWfQdRCkIELQBn9FAWuXLfpKyjYHgCz3wYmaBHU2Nr1nmwDJ0//CKIa4XkZlAd//ORK4ONjEjDQIy1NTp7xkWHP/u8HgA4rRE82iSCbSIlxkNqFkLArhIkxwxhAVz5gY+MRuHHzt0UQJBsRBNkFbxjuPfg9Aei6hSjpEAk0AiPoAdALBA0DqQGphYUdviogAJgV1+/bLoUzS4IKVifPZyA6EBSzyHLM6IqBXr8B9LrBz5//NeysObEaWN/yjuHC5V+gSqoRa9bDAgoXLv2MNYJAWQyY7j4gRwReF0Jd+YGXl1fg8+d/FqCaDxkUlYMrpk50rxJyITiCQC5BdiXIddDqcwLe0gYbgOagBdBcAAbQNDcRWwWPM5bRYlwBVIGdOSID5pvYPAFRikADH+DSw4LPQJBGoKEHgGnOARieDNDmxwN8eliIyBAL9+z7BjTwPwO0TYMXMBJSAPM2lCuIL/yIBkBDzwPxfmLUshBp5gMoJggAAgwA/2EtVFlwRl4AAAAASUVORK5CYII=">2F <span id="2fcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+					</tr>
+					<tr>
+						<td><button class="floorselect listbutton" value='3'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAnRJREFUeNqslj9v00AYxt/YdUnSP1iNIER0SJFAwEAzIAhb+ARlYCf9BMQDEiP5BunKgiMWBoZkoCP1WAZAFPFHaiUs0cikpcgtKQFFtLyPuUROasdO3Uc6XRTf/fzeve9z5xh5KJPJqNwVuS1wK7ge2dwMbnVuNcuy7MG5MQ/YI+7up+en1PS1aTo7P0VKQnaetXc69GN9nzZXbfSAaQzVfYEMezI9Gy9euXuOZi5O0DABvPa0gZfoDF3s/i8Pwm6UsjSZPkVBSqTG6Xxepe8fW7nxw0S21WrVe0CGlRIp5eGtBxd6ywsjWZEoc/00Wa93c3E5ucvQ1ZhIwJebpawatMxhy39VMbGncxKyyaBjwyDMBYN/3gFwIXs7RVE1mweP7gFYmLmUjAwUKywAOFIi/LOuOL1EJyyp64Co2tv87VgTQANpjyrBMACsw5tRZa7soKsCqMPoUaJscEC8bSZ7uiaJI6j86fm3YwPXl7fQlXtehgfZ4EUlKavq3Gg1ubG8Tc13Pw0OTBssm8WNF9sjZRxjzZfO3mlHji+O0kzGJ1ROf17YKFBvHn+l/eafCkdX7atDl8qcHJOXEAjDGIzt7p0nUCRIe88ncaf91xeGZxgjroC+mjtiYl76Z1567qBzePnM1UlP4IdnFtlmG5dU2dN6HtJQqF4JgsW47mx3IgKB/GbsTUXUV59EvS6JMRQ2QidBiMQdJaIT12dl6GnjEyUm6u4ohV+XvC74MBE6k+FTZBWt8f8Q0QPPwyFRYp+MLa45Aav57V1XYyEMUW2u7RU6vw5IfNNQVKDhck7tRO4J/hh4y20lzNixsAeyaIH6J8AAyJMyVFPWg7kAAAAASUVORK5CYII=">3F <span id="3fcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="floorselect listbutton" value='4'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAoFJREFUeNqsVkFvElEQfiwIQt26NcZISBSamOCpXDQeNCHh5qVt4tWU/gF1b+rJPemRHnp20Yu3wkVPxDX1YOrB1IuYGNk0IVRDKJRVQ5ta59s+yEKX3aXrl0xmYed9zHvzvhkCzAbxeFwilyebJ8taXrXJNLIyWanRaLRH1wZsyJ6Quy/O5qQzszkmpnJMiIjmu/1unf2uf2SdLyXyGyCTiVQdS0hkz0+fT+cv3HrEYolrzAkgblQes/3dukqky/3vg6NklxaLLDyTYm44NZ1gUnqR/dp6n4kGe0nDMMoDQiJ7QAEPk3deDbbnBYFQhE1fuc12v73JxMKHHSL9EOAFqFFmkts2nba/tbaEM00JqGYscf3EZADWgoMeF0A4f27uLvOLs1cX4JZAmCV234R8h1kQTlSIsVUXE6YX2H+G0FeAX/SaVVOaINRQdr8gKcJpICxDm37R2nwJVwShCqH7ybJTLUHTOmm6JPAWpPxcf3piwubGKpwy0DI0SALPByOiFL04NzGZ8b2iUWLy6LVZxstJKo7Ync0XeJSPtS/KUp+KhqVe8+sNLiNX1F/fY3s7tQJlVxy6hxYoVCCdtuBKhhjE9s/OlpAXSEYn/tvrjiXDO8TwETA0V4LHftkwqrT1zOHBXnrq8k1bwu13Cvuz/RlDSrGVng3kFh22XYEgMRJC21oIV0L6ZZxNgd+vIfxYfwa3wmOY1wzNAiETa5bIjo/PgmO3GZMlFqrWLFtHd27FbsB7ydBcjMaBqsJ4E1Fd+6FDljgnrVurUANYY/zvh+60JuRBEEW6xNmDo3tZdp3VbgE0t5OY2/zjjNP5eQaRfiJ76yU25JFT5+aKfwIMAFBfMDHiG1fRAAAAAElFTkSuQmCC">4F <span id="4fcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="floorselect listbutton" value='5'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAlFJREFUeNqslT9IW1EUxu+LUah0iO1iCsXWQIUiqINLhRJBcFTo0NG4tqA+6WA3s0opEaqrT6c6KC91UoQ+KhbBwQguQqUBwXRRIgQdBPH7HichJu9ffP3gchLevb977vlzr6YcFI/HYzApjBGMZNWnIoaFkcUwC4VCsXat5gCbhZns7h2IdfcNKFj1qPWx/e3i/J86OT5U+783aQnTATVcgYAtPXueSI2+/6gSXT3KSwR/X5rjJgag43XAMuzDp68Vj/x0fVVSi1+m1dnpSQXaJLCpJ0/bZyY+fwsMo5qbW1Rf/6DK7Vu90SbtslQq7WmSgL/wLOZ3TK/jw1PG9GWE2QTowTCKa8nAz1ECR94OvVNh1f9mmGaMwGTiVU9ooJwwSWBDiXATkmrbiPrPipQ7IKxQi3ZrEmgx7WH15zhHYxGYZW+G1c72Os0ygQYbPYyXdAhhy6P9zIhcQWlzdeHBwK0fKzTpSi+zB9XtTQrlE+vofN0YbGNFHeV2LTim15bNOD82knHO/bW9xp/6vbKhsIOF6yjDOy6oOJdrsDZXBxSlkZw8juAL4xzOLcfOESgJ0mVnz4tVTqLXvit1rcfUY4HJeLopu7pIKB8p07H1HKQz2E4JYouh7orVifAFYmfGJiP1dU9Sr/MyRwX10E4QPan2kt7J85nxvG1cvORCo9pLqbl5pwc+iIf2YvYps8ohl4jhtSDq9ZFxwqtooeaSUkamW+wCAUXLRwcAXtvArN9kzW8CPHzBd1v+tnnFL7AAPcD4GWRuNCAzL8NXdwIMAPC9Mj04oJ38AAAAAElFTkSuQmCC">5F <span id="5fcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+					</tr>
+					<tr>
+						<td><button class="floorselect listbutton" value='9'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAnpJREFUeNqslk1rE1EUhk9mJs1HIxkoViJitNAgFSUb0WXBnQvr2oWmv0Czc2n+QfoLTDYupVkoCBUHUbAodtEWpQE7ETTSEp3IaPoV9bzTmzBJJzOTTF84nCFz75Nz77nn3AmRg1KplMouxzbHNmt7ZbBpbBW2xXq9bvTPDTnAHrK7l45l1HRsmtLRDI1JEeud2W5SffcLVX+vwgOWZ2hpIJBhjybCp3JX1euUipwlNwH86udTMg+aJYbOd36X+2E3Tt4mNTxBXjqhJCkTv0xfdzazcjx0zjTNShfIsPsJJfng5uSd7vL8SA4pNBWfoc+tj9nIeLjJ0LchkYBNjkz1Wqbb8p9tP8aenpeQTQaNDLNWyHPB4MdbAM5dTFyhoJoevwR3F8DZINHZowQLwKESMUgJOWl5iY5ZUqcCgqqxv2WVJoAa0h5U3w8ZGoAV1GZQrZnv4MoAllDoQaKs/llFTetc04uSaEGFZePFyMAPv17DFbq1jBrkAs9FpKg6OXZ6KNgKw2qtqsaB5fuPzTz+aZiMY+ya+R6P+SPti6PU44mY+mN/65ooI08tNZ5Q86BR5OjKPefQpgInR+cleMIwBmM7e+cIFAnKoxPv/d0dCMM7jBFXQM+9Ih/ZF9P8xEvPtv+1L5yJTjkC3xjPaXvvGy6pgmPpOSi/zgfVKUEoMS4Ew54ITyD/M/amKM5Xj5aNJbgFMYb8RmglCJHYo0R04vosunabAVFiYske5fphvS44XfB+IrQmo3EgqzDRREqe/dAlSuyTVtvZsBqA+PzQRwYKlXGIa60NEt80rlJ8ADUBsyI8lnuCPwZW2F76Gav4ZOrCPPVfgAEAxVowoeK9aXkAAAAASUVORK5CYII=">9F <span id="9fcount" style="color:#b3b3b3; font-size:13px;"></span></button></td>
+						<td><button class="floorselect listbutton" value='allfloor'><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAdxJREFUeNqsVj2LwkAQXeVqyZUWgp3tVQGtLNIrBNKegr3+AvEHKHKtETxLbTwr7S6VltdobdDC8tQ/EOeFjeS8uJsPHwwTNrMvM7Mzs0mxAGSzWYVUjaRCUva9OpFYJHOSr+PxeGIyEFmH5LderzuTycQ5n8+Oh/1+767puu7AhqQmIxtpmuasVitHBtioqgrikZDM75EMsMWef6S00MLXopD5SbmnrdsBIB9hwhSFz3OqpHGapVJJKRaLLC6wFxz0WAVhpdFosKQwDAPqHSHHyt09UFLggocsk8kk9jCXy7k6zZ4Ml/BwOCQm2m63bmuC0Fqv14kJqXSgLBDOp9NpYsLhcAg1fkphY2AQx+5P66En44K3Xu2+n3eDwSAyWbfbBdl30LQpFwoFt0CjFDP20N63RyOsj+EZFnzQ9kUDFge0WywWUjLYwJZfF8KpXUUYov7GOx5qNVRNkeGs3W4/JGw2myCbhS5SMs5jcgQd0Gaz8YZpPlLlI9nw5MFBdCK3ktdBfi993inCaRMEfol/9nq925ppmlAfoS54US5xqhA8y3L3InpJnthEYC2XyzIRMv77Yccm5BiD8HK5MP5PI0QqTNikvNH0Gjt/d6Q/gRMlZsiAzUWKqwADAPDxXis8ZelUAAAAAElFTkSuQmCC">全選</button></td>
+					</tr>
+					</table>
+				<button class="menubutton" onclick="switchFilter(3);showStatus_WS();">Status&nbsp;&nbsp;<span id="goodrate"></span></button>
+					<table id="F3" style="display:none;">
+					<tr><td><button class="statusbutton listbutton"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAndJREFUeNqslj1s00AUxy9O4nw1iWm7ZGBgQ2KpxFI6ha1bK1XqSiqYWEgmmBBmY6hU5iKRjFSqlEgM3fBUmGACMSARiSELoU7q1InTJrz/9RK5rb9S9y89nRXf/fzufdwlwhxUKBQUGkpka2RF2yudTCNrkNVbrZZ+eW3EAfaKhmfJ1b5CxpKrAyblRvzd2Z8oG3yWmbmXZoNDGbAKQauuQIK9j98blvKvu0x+YDEvWQQ+Kiv4SJWgW1eAE9jC/r+pR34adSXW3phnw+/xKTQqYOXo7bMXix/bgWHcm8SYpdb7zGykljKjXMcwjC8RkYDfi/ttxW+bXtv/u7GAmN6RkM3EinVtGIS1YNDjOoBrmSc9FlapzRMMjwAsyitWaGDifIdFAGdKhJsoqXyU2A1LmnRAWFEt8tYEUEM7hZV1yBkagA30ZlgZ7zIYagBW0ehWCC9P9lIIW5Pary6JI0jtvMxdG3i8ncWgTnsZPZg28yUpN1bk+8OZYf2DpEaOVS6Xzdbx9txMGcfc3i6Pf2Vaj9OgGkZzTs4ppz/iy+lNMxDw6PE8O/0V2yHvahfq0CaVEtSkLfjCMAdzJ7FzBIoEVfRynh+eXgcr5ogr4MK9ciVgtPWftPWl8SByN/lw4AjsPM8z66uMS0p1bD0HVXq7GccEocWo7nR7Ijw9FF7q2WxWGXelZdx8dulPb+FDb1DEroeDi1R4YvcS3onrc8fztHGSCHZVdAEXwkB663TBB/GQL0afIqswPOMjvuehh5eoM61/kGDmBw6ri99cFQvQEDUq4uL4vC4bfpODADVb59Rv5J6gPwPfyD4FmRsLyGwK89V/AQYAu00YtyjZGI0AAAAASUVORK5CYII=">正常：<span id="goodcount"></span></button></td></tr>
+					<tr><td><button class="statusbutton listbutton"><img class="icon" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAgCAYAAAASYli2AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAm9JREFUeNqsVj1P21AUfbZDDHEkLBG1isTQdmkXpEgsTFUkOkP/QYPUvfWGOjVDmTqYhQmJsNA1ZkdYnZjaIQztUjJUilQh4YBDiDHQe8xL5Bg7dmKOdHWt+Pq88979eBFYCIrFokquQrZKVva9sshMMoOs3mq1rOC3QgjZZ3IflqanVTIGU0TRe/fv5oY1ej120O3Cg0wj0lokIZHtvJiaqryfnWUL2SwbhYbjMP3sDIvUiHSt/7sUJNuYm2PzmQyLw1NJYm9yOfaj1yu5udwz27aNASGRfXwiSetfC4XB9pIgKwjs9cwM+97tlkRFaRPpkcATcLJRKKhx2xy1/U+npzjT55BTWZDlickAfAsOenwLwtUVRWFpsUxbJ7wDYTmNuoFKWYYrexkYJxFRoKR6Pj1TAGK/A9Liz/W115ogNNFOaXFMpQMuEBrozbQwbBtuF4Q1NHrjfoWJcHB5iWNrUk/XRT6Cqtvt9sSEexcXcNVBL6MHqcEreVFUX45Zk9+I7OjqyiRhWrBs1rDSOBlHrNHp4FF7ML5IZVPO59UT111aprGUBF9oHv51XZ3U7Q7VoQ9VSlCTthBLhhjE9s8ulJAnSNMti3VubyPJ8A4x/AoYulekYDBt/RdtveTc3b1apPskDFtUEb8dB5dUNbT1QqDt02GHJQgtRnVn+RMRS0gr42x0Xl9D2D4/h9vkMSypQi9BUOJXCXX8+tRHTpsIlfiw5le5f19zm2EXfBKF3sfoU2QVhmcsEjsPR6jEOZmoOT6R6lFnl1ShN5JAyIvdiAvOJCA0fZ1Tf5R7gv4M/CQ7TBKbScjZ5BaL/wIMAHjDM0ndjsPaAAAAAElFTkSuQmCC" height="13px">故障：<span id="badcount"></span></button></td></tr>
+					</table>
+				<button class="menubutton" onclick="switchMenu(1);resetFilter();">Back</button>
+			</div>
+			<div id="M3" style="display:none;">
+				<button class="menubutton" onclick="switchShake(1);">Realtime</button>
+				<table id="S1" style="display:none;">
+					<tr><td><button class="listbutton" onclick="realtimeShake_WS(0);">Peak ground acceleration</button></td></tr>
+					<tr><td><button class="listbutton" onclick="realtimeShake_WS(1);">Peak ground velocity</button></td></tr>
+					<tr><td><button class="listbutton" onclick="realtimeShake_WS(2);">Peak ground displacement</button></td></tr>
+					<tr><td><button class="listbutton" onclick="realtimeShake_WS(3);">Spectrum acceleration 1s</button></td></tr>
+					<tr><td><button class="listbutton" onclick="realtimeShake_WS(4);">Spectrum acceleration 0.3s</button></td></tr>
+				</table>
+				<button class="menubutton" onclick="switchShake(2);">Historical</button>
+				<table id="S2" style="display:none;">
+				</table>
+				<button class="menubutton" onclick="switchMenu(1);endShake()">Back</button>
+			</div>
+		</div>
+		<img id="colorbar" src="data:image/png;base64,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" style="display: none;padding: 0 0 9px 0;">
+
+		<div id="myModal" class="modal">
+			<div class="modal-content">
+				<span class="close" onclick="document.getElementById('myModal').style.display='none';">×</span>
+				<p>
+					<a href="downloadlist.php"><button class="contentbutton">Download</button></a>
+				</p>
+			</div>
+		</div>
+
+		<script language="JavaScript">
+			var marker = new Array;
+			var map;
+			var infoWindow;
+			var windowUpdate;
+			var wholeMapUpdate;
+			var mapWebsocket;
+			var stationWebsocket;
+			const normalIcon = {
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAoCAYAAAALz1FrAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2VJREFUeNq8Vz1IW1EUPomoJWD7RKkgKAkIIi2SgF06Veigk7aLHeNSutlCly5t06VLoQa3OiR0c6l1ad1Mly4dTMUKFjEPBPGXpBUiUUN6vniuvLzc9xIT0w9OXt67991zz893zn1E7jBYnrIssaRZChZJscyzhGWeIzwui7/HAjeammikvZ3utrVRT0vLxYRf2Sx9Pzqir5kMbvETZZmW/xWVBLFzXtx409tLEx0drqb+zefpw+4uzbL8yedNfvSAJemmBKbHRg2DooEAXWcrqsXWyQlNbmzQajYLS4atijw2C5YnOjsp6vdTrZgyTZo7OChR5LHEYJn97v/U30/14uH6OuIF14UQI+WPtxyDkS8DA9Tq9WpfRKA/7u8Xgw1BQtxsbtbOHeVE4blGrlDI8W3CI1akEQNdkBHYqVRKZZEpAn/63WL3bnsbgpcCXpWmTgpgOitQPg5Yr3iOcR0ed3WpMIxDyRh4oANS05ItCdsw7ocxjl3bAetgKdaHkiCIpsPc4SEucXveW4DncZlXBlk3CCWGlckluZ9D3GihQjItyLwy3PL5cPF76T/AVUlPa2vRpxXWGJN5rkoy4IAOknFhSVkd8DzsVN/AJ8QNShKrx8eOaXjb5zOk1N+zDeN+CeOSrmVYPOdW0qOK4u9QSEsqcCXMhU/tSkq5obIy3tenfQ8F887KCv4OK8annnd3GyyOfoVLhfXnpYM5INnjVihRHQKqQL5m1r/6MTh4qfLuVvbFiknwSK2Y5GL2aO/szBCW1gX0FVZkipKLFIYfImye8n3NUFVaKbDzBOUj8XJrq2YFxYptwgD6bK119gB82zs9RbZdc6pnbpjZ2UHaZqTPZ5yUYCDH5o4gNk5NySn7nmxu4u8LUKSaIxFacfAyrfj+2hraQlJablW1axLBwzGnGsye952SYFejBDuaRjNCMCtxQppWxKnvuFXhCB/WtF3P3svlUDddS6lHEjxDC8ZunTgBbmGe7nhaVT8R7phO1sjzhPCCalVCqhLYrbEwO1JXZ3SzRg4PSc0ppiYlF9aoTINVEoto3T3eAvg8IwvTYjqtEiN+1YeOGLfaws7QUIEPDgX5SLpyjOMzjtut+pwLNuoIlYY18r3YMMyLFbErO9xp8FP1nUYqUZwwL/PSPwEGAHlCj0tZUgM9AAAAAElFTkSuQmCC"
+			};
+
+			const shakeIcon = [{
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAFlJREFUeNpiYECABCA+b2Bg8B+EQWwgDmBAA/MDAgL+379//z8MgNggMZAcTFEASAAXgCoGm3we2SR0AJIDOwPkHkIApIaJgQRAnNWkeIbo4IEHE74ABwgwANlH0Kk7g211AAAAAElFTkSuQmCC"
+			},{
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAMhJREFUeNpiZEAAASBOgNIg8ACIF8AkGaG0AbMg336JujQBTgN1sMDHjQcYXk9YegHIdATiDyCFAkBF91X2zYIrgoEvB84w3HFMBSk2ZAYSGbLTqwL4PKwZ0AGbghTDr4fPJb5fuHmQCcj353EwYcAF+P0dQJQDSOEHBiIASOHBdws341QA8hQQbAApXPB64rIPQHdgKHq3YBMIg1ReYIAHjxD/fdGC6P8q+2eDsVCC33+g+H5YuDKiGQIKcAUoG2TKBpgEQIABAOmCPbABLmFsAAAAAElFTkSuQmCC"
+			},{
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAsAAAALCAYAAACprHcmAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAOtJREFUeNpiZEAFCUCsD8QGQHwBiDcC8QE0NQwCQHxeSIHvv0eDxf+k9b7/7QsM/3MKsP8His+HKWKE0ufNErQMIue7oZjw/cNPhqmOaxieXng9AcgtBClOkDYQnV9yPpoBGwBpaFacB6IVmYB8f7t8QwZcAOgUBt0AZRAzAKRYAOhWBnwAKi8AUvwB6Ca8it89+ASiPoAUbzw08TxehacWXAMxNzCDwhPo+ID3Dz9JqDjIMLBysKAonBe4meHzi2+g0FjJiBTO64FucwB5BuQpkMLLG+6CQgEcbMjhDAMOUAwDC4D4AYwDEGAAYnVRv90FNQUAAAAASUVORK5CYII="
+			},{
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAMCAYAAABWdVznAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAO5JREFUeNpiZEAFCkAcAMQCUP4DIN4AxB9gChiRFDcAcb1JggSDkAIHWODugQ8gDFKcCNUI19AgZcBTHz5fgwFIo1h5dcMbhpWJNxi+f/jjCOQeYIQ6437heRMMxTBweMIThk2Fd0DOU2QCEgkgZ+BSDAK2BTIMggocIIMdQBrsle0FGAgBZQewGgMm5BAgBoA0HLx7kLAeUIiBPA3SsOHMghcMzy58wakY5On3D36APH2BCRo5iTMcL8BMwRZCIIlAdLkEIH4PDK3/bg0K/4Eh8x8YMv9BQQ7yLLaYZoAmiQBo3IDABVgMwwBAgAEAcM5MmFFptC8AAAAASUVORK5CYII="
+			},{
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA0AAAANCAYAAABy6+R8AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAPhJREFUeNpiZMAEBkAcAGV/AOINQPwAWQEjmuL5cgpMBt4BrAz8AowMjx78Y9i64TfDxw//QRoToYagaHjf1s/5//1/ART84D3/f6Ah/4Hy54FYAFnTfWwakDFUYz/MeQFAJ62/eJ+PAR8AOVVf8ROIKcgEclpUAhsDIQA0mEHXgBnsFSYGEgAocEAArAkYOkRpgqkDaboAClZCAOSnyxf+goL8AMiRN4AmBDAyMkjYOLDg1OTr+IXh1Yv/nSBNKPGUWcAOjhfkoAaG6n9gAGCNJxBQAOL9QM+C46SigeM/0GaQYlj8CGBLRsiaHaD0BahzUJIPQIABAMPXgGS8YfhOAAAAAElFTkSuQmCC"
+			},{
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQRJREFUeNpiZMAECkAcAMQCUP4DIN4AxB8YcACQwvVA/F9BjOG/gw4EC3Az/AeKvQfiBlyazoM07G9m+P9/PQK/X8LwvyECrBmE58M0MELp/UBNDuf7gCZwY3fOgSsMDI61YGYhEE9gBhIGQNyxvoKBQUOGAScAGszAyAg2wALI7WQCBYSBIgMD0D8EQbwj3FsOII32II3EAJCtMMCEL5jxAZDGiyCPEwMevIIzP4A0bgAJbDhJWGPjSniCuADSeAGkOXEykHEft6YF+yAYGh2oCQCUSubnoiaA+zMZ/hf4YiYAdM39UAXg5AYMbZgGUJIrQFbMiMMAB2jCACcaKEYBAAEGAGB8WvlcgPL6AAAAAElFTkSuQmCC"
+			},{
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARpJREFUeNpiZMAOHKAYBD4A8QEgvsBAACQA8X0g/m/Az/DfQYThvwArw38QH4j3A7EBLo3zQYoS5Bj+33dj+P8/AIH320AMAsq/h1oABoxQugCI++cbAWXkcDsr8RwDw4JHYG8YAvEDkGYBkFMbNBgE6jUYCALFXUBd3xgWgMxiAhIBIAPylRmIAlALwE4HaVYA+ocBGDBEgQBJRIwwMZAIkC0Ba/7wm3jNyGpBmi9c+AgOBKLAhudw5gGQ5g2gYC+8TJytjTfATFBoMzBDxR/e+MIQAfKPhRBujY5HGBiA6kDx7AnEP9CT5n9gaP4/74iawoCJ578CFzyF4UyioMxwHpqW0TEo+SogK2bEYYgCmsIL0NyFAgACDAD9+GAoGf/fnwAAAABJRU5ErkJggg=="
+			},{
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAARNJREFUeNqkk80NgkAQhQdiPBgPe/BgjDGUoB1Qgh2oFViCWoIVYAtWAB1gB3jyuh6MMR5c38MF8Q8xTvLJHnhvhvWNI+9LgT7wwR5sQCQVygMBMKRfF6Pc2xloMC8Ts6P2amKClhjj3Um6YuYqN4vthC+d9bgpRvcexUXiTm4SZkLHPkOM64dtWLvl37g5iwx26XECVq7t7s/Ud3H6nXURTMqa8oeSIYXDhlSuUTO/s9RA0fWXKrzvu/Jn0WDLi/mlotP9SINof8F1HqobrI83cT4B/44FAkujKt1ts+Vz9jWjWxYk5CQLUvApyglfYGwZ32ICmVK7E0HZhMoujM4WqkACxs8C58tyZUuztbzUVYABAC0JefIyR23GAAAAAElFTkSuQmCC"
+			},{
+				url:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABEAAAARCAYAAAA7bUf6AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAQ1JREFUeNpiZMANHKAYBB4A8QUoJggEgLgBiN8D8X8s+D4QBxAy4DxIsQUQdwPxRSAG6vq/FYhrgVgGYdh8vAZ0QzViwyBDQxAG9aMb0k/IAGTshjAIHGaMUFe8B3qBYTkDceATENtC6A1AKpAJFlCJDMQDPiB2gzDBekGGKDAgBIkG5khJgYmBTCCDxCbbkCcI5gcmWCrcRaIhJ6EGgPSDDDkA4swn0RVrIExQ7DAwA/EPIOYESjiAQt2QiOhNAOLXEG4g1DVwAE6xBXgS2WEg1kIktASYRka0pL8eFGUy0HSjhWT7bmi4fYIIgaQX4HNxAjS3YsvFIEsM0DUw4jFMAZYQoeACuv9hACDAAHKefCTzdjXpAAAAAElFTkSuQmCC"
+			}];
+
+			const statusIcon = new Array;
+			statusIcon.push(document.getElementsByClassName("statusbutton")[1].childNodes[0].src);
+			statusIcon.push(document.getElementsByClassName("statusbutton")[0].childNodes[0].src);
+
+			const normalStyle = [{
+				"elementType": "geometry",
+				"stylers": [
+					{ "visibility": "simplified" }
+				]
+			},{
+				"featureType": "administrative",
+				"elementType": "geometry.stroke",
+				"stylers": [
+					{ "visibility": "on" }
+				]
+			}];
+
+			const shakeStyle = [{
+				"stylers": [
+					{ "visibility": "off" }
+				]
+			},{
+				"featureType": "water",
+				"elementType": "geometry",
+				"stylers": [
+					{ "visibility": "simplified" }
+				]
+			},{
+				"featureType": "administrative",
+				"stylers": [
+					{ "visibility": "on" }
+				]
+			},{
+				"featureType": "landscape",
+				"elementType": "geometry",
+				"stylers": [
+					{ "visibility": "simplified" },
+					{ "color": "#e4e2dd" }
+				]
+			}];
+
+			function initialize() {
+				map = new google.maps.Map(document.getElementById('map'), {
+					zoom: 8,
+					center: {lat: 23.772, lng: 120.976},
+					streetViewControl: false,
+					mapTypeControl: false,
+					zoomControl: false,
+					scaleControl: true,
+				});
+
+				map.setOptions({styles: normalStyle});
+
+				var input = document.getElementById('autobox');
+				var switcher = document.getElementById('switcher');
+				var menu = document.getElementById('menu');
+				var colorbar = document.getElementById('colorbar');
+
+				map.controls[google.maps.ControlPosition.TOP_LEFT].push(switcher);
+				map.controls[google.maps.ControlPosition.TOP_LEFT].push(input);
+				map.controls[google.maps.ControlPosition.LEFT_TOP].push(menu);
+				map.controls[google.maps.ControlPosition.BOTTOM_LEFT].push(colorbar);
+
+				google.maps.Marker.prototype.status = new Boolean(false);
+				google.maps.Marker.prototype.setStatus = function(input) {
+					this.status = Boolean(input);
+				}
+				google.maps.Marker.prototype.getStatus = function() {
+					return this.status;
+				}
+
+				downloadStation(true, null);
+			}
+
+			function downloadStation(firstTime, searchcode) {
+				var dataUrl = "genxml1.php?" + new Date().getTime();
+
+				if (searchcode) dataUrl += "&station=" + searchcode;
+
+				resetInfoWindow();
+
+				$.ajax({
+					url: dataUrl,
+					type: 'GET',
+					dataType: 'xml',
+					error: function(xml) {
+						alert('Download station data error' + xml + '!');
+					},
+					success: function(xml) {
+						var marker_xml = xml.documentElement.getElementsByTagName("marker");
+						for (var i = 0; i < marker_xml.length; i++) {
+							var indexs = parseInt(marker_xml[i].getAttribute("indexs"));
+							var station = marker_xml[i].getAttribute("station");
+							var serial = marker_xml[i].getAttribute("serial");
+							var area = marker_xml[i].getAttribute("area");
+							var locname = marker_xml[i].getAttribute("locname");
+							var floors = marker_xml[i].getAttribute("floor");
+							var ip = marker_xml[i].getAttribute("ip");
+							var b_ip = marker_xml[i].getAttribute("b_ip");
+							var point = new google.maps.LatLng(
+								parseFloat(marker_xml[i].getAttribute("lat")),
+								parseFloat(marker_xml[i].getAttribute("lng")));
+							var html = genInfoWindow(locname, area, station, serial, floors, point, ip, indexs);
+							var html2 =	"<h3><b>" + locname + "</b></h3>" +
+										"<div id='utility'><table>" +
+										"<tr><td><div class='indicator_not'></div></td><td>TCP1:</td><td>NULL</td></tr>"+
+										"<tr><td><div class='indicator_not'></div></td><td>TCP2:</td><td>NULL</td></tr>" +
+										"<tr><td><div class='indicator_not'></div></td><td>NTP:</td><td>NULL</td></tr>" +
+										"<tr><td></td><td>F/W:</td><td>NULL</td></tr>" +
+										"<tr style='display:none;'><td><input type='text' id='b_ip' value='" + b_ip + "'/></td></tr>" +
+										"</table></div>" +
+										"<p align='right'><input type='button' class='contentbutton' value='Demo' style='background-color: #80b1fe;' onclick='alertDemo(3);'/>" +
+										"<input type='button' class='contentbutton' value='Demo' style='margin-left: 3px;' onclick='alertDemo(5);'/></p>";
+
+							if (searchcode) marker[indexs] = null;
+
+							if (firstTime) {
+								marker[indexs] = new google.maps.Marker({
+									map: map,
+									position: point,
+									title: station,
+									icon: normalIcon,
+								});
+							} else {
+								marker[indexs].setIcon(normalIcon);
+							}
+
+							bindInfoWindow(marker[indexs], map, html, html2);
+						}
+					},
+				});
+			}
+
+			function resetInfoWindow() {
+				if (infoWindow) infoWindow.close();
+				infoWindow = null;
+				infoWindow = new google.maps.InfoWindow;
+			}
+
+			function bindInfoWindow(marker_i, map_i, html, html2) {
+				google.maps.event.clearInstanceListeners(marker_i);
+
+				google.maps.event.addListener(marker_i, 'click', function() {
+					infoWindow.setContent(html);
+					infoWindow.open(map_i, marker_i);
+				});
+
+				google.maps.event.addListener(marker_i, 'dblclick', function() {
+					infoWindow.setContent(html2);
+					infoWindow.open(map_i, marker_i);
+					freshUtility();
+				});
+			}
+
+			function genInfoWindow(locname, area, station, serial, floors, point, ip, indexs) {
+				var html =	"<div id='C1' style='display:inline;'>" +
+							"<h3> <b>" + locname + "</h3><table>" +
+							"<tr><td>區域：</td> <td>" + area + "</td></tr>" +
+							"<tr><td>站碼：</td> <td>" + station + "</td></tr>" +
+							"<tr><td>序號：</td> <td>" + serial + "</td></tr>" +
+							"<tr><td>樓層：</td> <td>" + floors + "</td></tr>" +
+							"<tr><td>經度：</td> <td>" + point.lng().toFixed(6) + "</td></tr>" +
+							"<tr><td>緯度：</td> <td>" + point.lat().toFixed(6) + "</td></tr>" +
+							"<tr><td>IP：</td><td>" + ip + "</td></tr>" +
+							"<tr style='display:none;'><td><input type='number' id='indexs' value='" + indexs + "'/></td></tr></table>" +
+							"<p align='right'><input type='button' class='contentbutton' value='Edit' onclick='loadTab(2);dragMarker();'/></p>" +
+							"</div>" +
+							"<div id='C2' style='display:none;'>" +
+							"<h3><input type='text' id='locname' value='" + locname + "' style='font-size: 15px'/> </h3><table>" +
+							"<tr><td>區域：</td> <td><input type='text' id='area' value='" + area + "'/></td></tr>" +
+							"<tr><td>站碼：</td> <td><input type='text' id='station' value='" + station + "'/></td></tr>" +
+							"<tr><td>序號：</td> <td><input type='number' id='serial' value='" + serial + "'/></td></tr>" +
+							"<tr><td>樓層：</td> <td><input type='number' id='floor' value='" + floors + "'/></td></tr>" +
+							"<tr><td>經度：</td> <td><input type='number' id='lng' value='" + point.lng().toFixed(6) + "'/></td></tr>" +
+							"<tr><td>緯度：</td> <td><input type='number' id='lat' value='" + point.lat().toFixed(6) + "'/></td></tr>" +
+							"<tr><td>IP：</td> <td><input type='text' id='ip' value='" + ip + "'/></td></tr>" +
+							"<tr><td><input type='button' class='contentbutton' value='Save' onclick='saveData();'/></td></tr>" +
+							"</table></div>";
+
+				return html;
+			}
+
+			function freshUtility() {
+				var ip = document.getElementById("b_ip").value;
+				var url = "modbus_test.php?" + new Date().getTime() + "&ip=" + ip;
+				$("#utility").load(url);
+			}
+
+			function writeUtility(n) {
+				var ip = document.getElementById("b_ip").value;
+				var url = "modbus_write.php?" + new Date().getTime();
+
+				if (n == 4) {
+					url += "&ip=" + ip + "&ip0=0&ip1=0&ip2=0&ip3=0" + "&row=" + n;
+				} else {
+					var ip0 = document.getElementsByName("ip0");
+					var ip1 = document.getElementsByName("ip1");
+					var ip2 = document.getElementsByName("ip2");
+					var ip3 = document.getElementsByName("ip3");
+
+					url += "&ip=" + ip + "&ip0=" + ip0[n-1].value + "&ip1=" + ip1[n-1].value +
+							"&ip2=" + ip2[n-1].value + "&ip3=" + ip3[n-1].value + "&row=" + n;
+				}
+				$("#utility").load(url);
+			}
+
+			function alertDemo(level) {
+				var result = confirm("Run the Demo?");
+
+				if (result == true) {
+					var ip = document.getElementById("b_ip").value;
+					var url = "modbus_demo.php?" + new Date().getTime() + "&ip=" + ip + "&level=" + level;
+
+					$.get(url, function(data) {
+						alert(data);
+					});
+				} else {
+					alert("Cancel the Demo!");
+				}
+			}
+
+			function genShakemap() {
+				map.setOptions({styles: shakeStyle});
+
+				resetInfoWindow();
+				showAllMarkers();
+
+				for(var i = 0; i < marker.length; i++) {
+					var station = marker[i].getTitle();
+					var html =	"<h3><b>" + station + "</b></h3>" +
+								"<div id='shakewindow'><table>" +
+								"<tr><td>Acc:</td><td class='value'>N/A</td></tr>" +
+								"<tr><td>Vel:</td><td class='value'>N/A</td></tr>" +
+								"<tr><td>Dis:</td><td class='value'>N/A</td></tr>" +
+								"<tr><td>Sa1:</td><td class='value'>N/A</td></tr>" +
+								"<tr><td>Sas:</td><td class='value'>N/A</td></tr>" +
+								"</table></div>" +
+								"<div style='display:none;'><input type='number' id='indexs' value='" + i + "'/></div>";
+
+					marker[i].setIcon(shakeIcon[0]);
+					bindShakeWindow_WS(marker[i], map, html);
+				};
+
+				document.getElementById("colorbar").style.display='inline';
+
+				google.maps.event.addListener(infoWindow, 'closeclick', function() {
+					clearTimeout(windowUpdate);
+					if (stationWebsocket instanceof WebSocket) stationWebsocket.close();
+				});
+
+			}
+
+			function realtimeShake() {
+				clearTimeout(wholeMapUpdate);
+
+				var url = "realtime.php?" + new Date().getTime();
+				$.getJSON(url, function(data) {
+						for(var i = 0; i < marker.length; i++) {
+							if (data[i] == 0) {
+								marker[i].setVisible(false);
+								marker[i].setIcon(null);
+							}
+							else {
+								marker[i].setIcon(shakeIcon[data[i]]);
+								marker[i].setVisible(true);
+							}
+						};
+					});
+
+				wholeMapUpdate = setTimeout(realtimeShake, 1100);
+			}
+			
+			function realtimeShake_WS(valuetype) {
+				if (mapWebsocket instanceof WebSocket) mapWebsocket.close();
+				$("#S1 .listbutton").css('color', '');
+
+				mapWebsocket = new WebSocket('ws://hq2.p-alert.tw:9999',
+											'map-shake-protocol');
+				mapWebsocket.binaryType = "arraybuffer";
+
+				mapWebsocket.onopen = function() {
+					$("#S1 .listbutton").get(valuetype).style.color = '#00cc00';
+					mapWebsocket.send(valuetype);
+				};
+
+				mapWebsocket.onerror = function() {
+					$("#S1 .listbutton").get(valuetype).style.color = '#ff0000';
+				};
+
+				mapWebsocket.onmessage = function(event) {
+					if (event.data instanceof ArrayBuffer) {
+						var level = new Int8Array(event.data);
+
+						for(var i = 0; i < marker.length; i++) {
+							if (level[i] == 0) {
+								marker[i].setVisible(false);
+								marker[i].setIcon(null);
+							}
+							else {
+								marker[i].setIcon(shakeIcon[level[i]]);
+								marker[i].setVisible(true);
+							}
+						};
+					};
+				};
+			}
+
+			function bindShakeWindow(marker_i, map_i, html) {
+				google.maps.event.clearInstanceListeners(marker_i);
+
+				google.maps.event.addListener(marker_i, 'click', function() {
+					infoWindow.setContent(html);
+					infoWindow.open(map_i, marker_i);
+					freshShakeWindow();
+				});
+			}
+
+			function bindShakeWindow_WS(marker_i, map_i, html) {
+				google.maps.event.clearInstanceListeners(marker_i);
+
+				google.maps.event.addListener(marker_i, 'click', function() {
+					if (stationWebsocket instanceof WebSocket) stationWebsocket.close();
+
+					infoWindow.setContent(html);
+					infoWindow.open(map_i, marker_i);
+
+					stationWebsocket = new WebSocket('ws://hq2.p-alert.tw:9999',
+											'station-shake-protocol');
+					stationWebsocket.binaryType = "arraybuffer";
+
+					stationWebsocket.onopen = function() {
+						var indexs = document.getElementById("indexs").value;
+						$("h3").css('color', '#00cc00');
+						stationWebsocket.send(indexs);
+					};
+
+					stationWebsocket.onerror = function() {
+						$("h3").css('color', '#ff0000');
+					};
+
+					stationWebsocket.onmessage = function(event) {
+						if (event.data instanceof ArrayBuffer) {
+							var value = new Float64Array(event.data);
+							var valuespan = document.getElementsByClassName("value");
+							$(".value").empty();
+
+							for(var i = 0; i < 5; i++) {
+								if (value[i] > 0) {
+									$(valuespan[i]).append(value[i].toFixed(2));
+								}
+								else {
+									$(valuespan[i]).append("N/A");
+								}
+							};
+						};
+					};
+				});
+			}
+
+			function freshShakeWindow() {
+				clearTimeout(windowUpdate);
+				var indexs = document.getElementById("indexs").value;
+				var url = "shakewindow.php?" + new Date().getTime() + "&indexs=" + indexs;
+				$("#shakewindow").load(url);
+				windowUpdate = setTimeout(freshShakeWindow, 1200);
+			}
+
+			function endShake() {
+				clearTimeout(wholeMapUpdate);
+				clearTimeout(windowUpdate);
+				if (mapWebsocket instanceof WebSocket) mapWebsocket.close();
+				if (stationWebsocket instanceof WebSocket) stationWebsocket.close();
+				google.maps.event.clearInstanceListeners(infoWindow);
+
+				$("#S1 .listbutton").css('color', '');
+				document.getElementById("colorbar").style.display='none';
+				map.setOptions({styles: normalStyle});
+				showAllMarkers();
+				downloadStation(false, null);
+			}
+
+			function showStatus() {
+				clearTimeout(wholeMapUpdate);
+
+				var url = "status.php?" + new Date().getTime();
+				var goodCount = 0;
+
+				$("#goodcount").empty();
+				$("#badcount").empty();
+				$("#goodrate").empty();
+
+				$.ajax({
+					url: url,
+					type: 'GET',
+					dataType: 'json',
+					async: false,
+					error: function() {
+						alert('Download status data error!');
+					},
+					success: function(data) {
+						for(var i = 0; i < marker.length; i++) {
+
+							if (data[i] == 1) goodCount++;
+							marker[i].setIcon(statusIcon[data[i]]);
+						}
+					},
+				});
+
+				$("#goodcount").append(goodCount);
+				$("#badcount").append(marker.length - goodCount);
+
+				var percent = (goodCount/marker.length)*100.0;
+				var str = percent.toFixed(2) + "%";
+				$("#goodrate").append(str);
+
+				wholeMapUpdate = setTimeout(showStatus, 5000);
+			}
+
+			function showStatus_WS() {
+				if (mapWebsocket instanceof WebSocket) mapWebsocket.close();
+				var goodCount = 0;
+
+				mapWebsocket = new WebSocket('ws://hq2.p-alert.tw:9999',
+											'station-status-protocol');
+				mapWebsocket.binaryType = "arraybuffer";
+
+				mapWebsocket.onopen = function() {
+					for (var i in marker) {
+						marker[i].setIcon(statusIcon[1]);
+						marker[i].setStatus(true);
+					}
+				};
+
+				mapWebsocket.onerror = function() {
+				};
+
+				mapWebsocket.onmessage = function(event) {
+					goodCount = 0;
+
+					$("#goodcount").empty();
+					$("#badcount").empty();
+					$("#goodrate").empty();
+				
+					if (event.data instanceof ArrayBuffer) {
+						var status = new Int32Array(event.data);
+
+						for(var i in status) {
+							if (marker[status[i]].getStatus()) {
+								marker[status[i]].setStatus(false);
+								marker[status[i]].setIcon(statusIcon[0]);
+							}
+							else {
+								marker[status[i]].setStatus(true);
+								marker[status[i]].setIcon(statusIcon[1]);
+							}
+						};
+
+						for(i in marker) {
+							if (marker[i].getStatus()) goodCount++;
+						};
+
+						$("#goodcount").append(goodCount);
+						$("#badcount").append(marker.length - goodCount);
+						
+						var percent = (goodCount/marker.length)*100.0;
+						var str = percent.toFixed(2) + "%";
+						$("#goodrate").append(str);
+					};
+				};
+			}
+
+			function showArea() {
+				var areacheck = document.getElementsByClassName("areacheck");
+
+				for(i = 0; i < areacheck.length; i++) {
+					var area = areacheck[i].id;
+					var iconimg = areacheck[i].childNodes[0].src;
+
+					if (area.match("allarea")) continue;
+					else if(area) {
+						var url = "genjson_area.php?" + new Date().getTime() + "&area=" + area;
+						var countspan = "#" + area.toLowerCase() + "count";
+
+						$(countspan).empty();
+
+						$.ajax({
+							url: url,
+							type: 'GET',
+							dataType: 'json',
+							async: false,
+							error: function() {
+								alert('Download area data error!');
+							},
+							success: function(data) {
+								for(var j = 0; j < data.length; j++) {
+									var indexs = parseInt(data[j].indexs);
+									marker[indexs].setIcon(iconimg);
+								}
+								$(countspan).append(data.length);
+							},
+						});
+					}
+				}
+			}
+
+			function showFloor() {
+				var floorselect = document.getElementsByClassName("floorselect");
+
+				for(i = 0; i < floorselect.length; i++) {
+					var floors = floorselect[i].value;
+					var iconimg = floorselect[i].childNodes[0].src;
+
+					if (floors.match("allfloor")) continue;
+					else if(floors) {
+						var url = "genjson_floor.php?" + new Date().getTime() + "&floor=" + parseInt(floors);
+						var countspan;
+
+						if (parseInt(floors) > 0) {
+							countspan = "#" + parseInt(floors) + "fcount";
+						} else {
+							countspan = "#b" + Math.abs(floors) + "count";
+						}
+
+						$(countspan).empty();
+
+						$.ajax({
+							url: url,
+							type: 'GET',
+							dataType: 'json',
+							async: false,
+							error: function() {
+								alert('Download floor data error!');
+							},
+							success: function(data) {
+								for(var j = 0; j < data.length; j++) {
+									var indexs = parseInt(data[j].indexs);
+									marker[indexs].setIcon(iconimg);
+								}
+								$(countspan).append(data.length);
+							},
+						});
+					}
+				}
+			}
+
+			function switchFilter(n) {
+				var layer;
+				eval('layer=\'F'+n+'\'');
+
+				resetFilter();
+
+				document.getElementById(layer).style.display='inline';
+			}				
+
+			function resetFilter() {
+				clearTimeout(wholeMapUpdate);
+				if (mapWebsocket instanceof WebSocket) mapWebsocket.close();
+
+				showAllMarkers();
+
+				for(var i=0; i<marker.length; i++) {
+					marker[i].setIcon(normalIcon);
+				};
+
+				for(i=1; i<4; i++) {
+					eval('document.getElementById(\'F'+i+'\').style.display=\'none\'');
+				}
+			}
+
+			function openDownloadModal() {
+				document.getElementById('myModal').style.display = "block";
+			}
+
+			function openMenu(){
+				var menu = document.getElementById("menu");
+				if(menu.style.display == 'none' ) {
+					menu.style.display = 'inline';
+				} else {
+					menu.style.display = 'none';
+				}
+			}
+
+			function switchMenu(n) {
+				var layer;
+				eval('layer=\'M'+n+'\'');
+
+				for (var i=1;i<4;i++) {
+					eval('document.getElementById(\'M'+i+'\').style.display=\'none\'');
+				}
+
+				document.getElementById(layer).style.display='inline';
+			}
+
+			function switchUtility(n) {
+				var layer;
+				eval('layer=\'row_'+n+'_e\'');
+
+				for (var i=1;i<4;i++) {
+					eval('document.getElementById(\'row_'+i+'_e\').style.display=\'none\'');
+					eval('document.getElementById(\'row_'+i+'\').style.display=\'\'');
+				}
+
+				eval('document.getElementById(\'row_'+n+'\').style.display=\'none\'');
+				document.getElementById(layer).style.display='';
+			}
+			
+			function switchShake(n) {
+				var layer;
+				eval('layer=\'S'+n+'\'');
+
+				resetShake();
+
+				document.getElementById(layer).style.display='inline';
+			}
+			
+			function resetShake() {
+				if (mapWebsocket instanceof WebSocket) mapWebsocket.close();
+
+				showAllMarkers();
+
+				for(var i=1; i<3; i++) {
+					eval('document.getElementById(\'S'+i+'\').style.display=\'none\'');
+				}
+			}
+
+			function loadTab(n){ 
+				var layer;
+				eval('layer=\'C'+n+'\''); 
+
+				for(var i=1; i<3; i++) {
+					eval('document.getElementById(\'C'+i+'\').style.display=\'none\'');
+ 				}
+
+				document.getElementById(layer).style.display='inline';
+			}
+
+			function saveData() {
+				var locname = encodeURIComponent(document.getElementById("locname").value);
+				var area = encodeURIComponent(document.getElementById("area").value);
+				var station = encodeURIComponent(document.getElementById("station").value);
+				var serial = encodeURIComponent(document.getElementById("serial").value);
+				var floors = encodeURIComponent(document.getElementById("floor").value);
+				var longitude = encodeURIComponent(document.getElementById("lng").value);
+				var latitude = encodeURIComponent(document.getElementById("lat").value);
+				var ip = encodeURIComponent(document.getElementById("ip").value);
+				var indexs = document.getElementById("indexs").value;
+
+				var url = "updatesql.php?" + new Date().getTime() +
+						"&locname=" + locname + "&area=" + area +
+						"&station=" + station + "&serial=" + serial + "&floor=" + floors +
+						"&lng=" + longitude + "&lat=" + latitude + "&ip=" + ip;
+
+				$.ajax({
+					url: url,
+					type: 'GET',
+					error: function() {
+						google.maps.event.trigger(infoWindow, 'closeclick');
+						alert('Updating Palert information error!');
+					},
+					success: function() {
+						marker[indexs].setVisible(false);
+						google.maps.event.trigger(infoWindow, 'closeclick');
+						marker[indexs].setMap(null);
+						downloadStation(true, station);
+						alert("Palert information updated!");
+					}
+				});
+			}
+
+			function dragMarker() {
+				var indexs = document.getElementById("indexs").value;
+				var origin = marker[indexs].getPosition();
+
+				marker[indexs].setDraggable(true);
+
+				google.maps.event.addListener(marker[indexs], 'dragend', function() {
+					var point = marker[indexs].getPosition();
+					document.getElementById("lng").value = point.lng().toFixed(6);
+					document.getElementById("lat").value = point.lat().toFixed(6);
+				});
+
+				google.maps.event.addListenerOnce(infoWindow, 'closeclick', function() {
+					google.maps.event.clearListeners(marker[indexs], 'dragend');
+					marker[indexs].setDraggable(false);
+					marker[indexs].setPosition(origin);
+				});
+			}
+
+			function getPosition() {
+				if (navigator.geolocation) {
+					navigator.geolocation.getCurrentPosition(function(position) {
+						var pos = {
+							lat: position.coords.latitude,
+ 							lng: position.coords.longitude
+ 						};
+						map.setCenter(pos);
+						map.setZoom(13);
+					}, function() {
+						handleLocationError(true);
+					});
+				} else {
+					handleLocationError(false);
+				}
+			}
+
+			function handleLocationError(browserHasGeolocation) {
+				alert(browserHasGeolocation ?
+					'Error: The Geolocation service failed.' :
+					'Error: Your browser doesn\'t support geolocation.');
+			}
+
+			function hideAllMarkers() {
+				for(var i = 0; i < marker.length; i++) {
+					marker[i].setVisible(false);
+				};
+			}
+
+			function showAllMarkers() {
+				for(var i = 0; i < marker.length; i++) {
+					marker[i].setVisible(true);
+				};
+			}
+
+			$(function() {
+				function search_marker(strValue) {
+					var indexs = parseInt(strValue);
+					for(var i = 0; i < marker.length; i++) {
+						if (marker[i].getAnimation() != null) {
+							marker[i].setAnimation(null);
+						}
+					};
+					var places = marker[indexs].getPosition();
+					map.setCenter(places);
+					map.setZoom(15);
+					google.maps.event.trigger(marker[indexs], 'click');
+					google.maps.event.addListenerOnce(infoWindow, 'closeclick', function(){
+						marker[indexs].setAnimation(null);
+					});
+					marker[indexs].setAnimation(google.maps.Animation.BOUNCE);
+				}
+
+				var url="genjson1.php?" + new Date().getTime();
+				$("#autobox").autocomplete({
+					source: url,
+					minLength: 2,
+					select: function(event, ui) {
+						search_marker(ui.item.value);
+					},
+				});
+			});
+
+ 			$(".areacheck").click(function(){
+				var area = $(this).attr("id");
+				var i, j;
+				if(area.match("allarea")) {
+					for(i = 0; i < marker.length; i++) {
+						if(marker[i].getVisible()) {
+							for(j = 0; j < marker.length; j++) {
+								marker[j].setVisible(false);
+							}
+							break;
+						} else if(i == (marker.length - 1)) {
+							for(j = 0; j < marker.length; j++) {
+								marker[j].setVisible(true);
+							}
+						}
+					}
+				} else if (area) {
+					var url="genjson_area.php?" + new Date().getTime() + "&area=" + area;
+					$.getJSON(url, function(data) {
+						for(i = 0; i < data.length; i++) {
+							var indexs = parseInt(data[i].indexs);
+							if(marker[indexs].getVisible()) {
+								marker[indexs].setVisible(false);
+							} else {
+								marker[indexs].setVisible(true);
+							}
+						}
+					});
+				}
+			});
+
+			$(".floorselect").click(function(){
+				var floors = $(this).attr("value");
+				var i, j;
+				if(floors.match("allfloor")) {
+					for(i = 0; i < marker.length; i++) {
+						if(marker[i].getVisible()) {
+							for(j = 0; j < marker.length; j++) {
+								marker[j].setVisible(false);
+							}
+							break;
+						} else if(i == (marker.length - 1)) {
+							for(j = 0; j < marker.length; j++) {
+								marker[j].setVisible(true);
+							}
+						}
+					}
+				} else if (floors) {
+					var url="genjson_floor.php?" + new Date().getTime() + "&floor=" + floors;
+					$.getJSON(url, function(data) {
+						for(i = 0; i < data.length; i++) {
+							var indexs = parseInt(data[i].indexs);
+							if(marker[indexs].getVisible()) {
+								marker[indexs].setVisible(false);
+							} else {
+								marker[indexs].setVisible(true);
+							}
+						}
+					});
+				}
+			});
+
+			window.onclick = function(event) {
+				var modal = document.getElementById('myModal');
+				if (event.target == modal) {
+					modal.style.display = "none";
+				}
+			}
+
+		</script>
+	</body>
+</html>
